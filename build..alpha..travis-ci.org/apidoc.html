@@ -153,15 +153,6 @@
 
         <li>
 
-            <a class="apidocElementLiA" href="#apidoc.element.checkit.toString">
-            function <span class="apidocSignatureSpan">checkit.</span>toString
-            <span class="apidocSignatureSpan">()</span>
-            </a>
-
-        </li>
-
-        <li>
-
             <span class="apidocSignatureSpan">object <span class="apidocSignatureSpan">checkit.</span>Error.prototype</span>
 
         </li>
@@ -1329,7 +1320,24 @@
   this.context        = _.clone(context || {})
   this.validator      = new Validator(this.target, checkit.language)
 }</pre></li>
-    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+            &#x3c;p&#x3e;Asynchronously runs a validation block, returning a promise
+which resolves with the validated object items, or is rejected
+with a &#x3c;code&#x3e;Checkit.Error&#x3c;/code&#x3e; instance.&#x3c;/p&#x3e;
+
+          &#x3c;/div&#x3e;
+
+          &#x3c;div class=&#x22;content&#x22;&#x3e;&#x3c;div class=&#x27;highlight&#x27;&#x3e;&#x3c;pre&#x3e;    run: &#x3c;span
+ class=&#x22;keyword&#x22;&#x3e;function&#x3c;/span&#x3e;(target) {
+    &#x3c;span class=&#x22;keyword&#x22;&#x3e;return&#x3c;/span&#x3e; &#x3c;span class=&#x22;keyword&#x22;&#x3e;new&#x3c;/span&#
+x3e; Checkit.<span class="apidocCodeKeywordSpan">Runner</span>(&#x3c;span class=&#x22;keyword&#x22;&#x3e;this&#x3c;/span&#x3e;).
+run(target);
+  }
+
+};&#x3c;/pre&#x3e;&#x3c;/div&#x3e;&#x3c;/div&#x3e;
+
+      &#x3c;/li&#x3e;
+...</pre></li>
     </ul>
 
 
@@ -1402,20 +1410,21 @@
 }</pre></li>
     <li>example usage<pre class="apidocCodePre">...
 
-var [err, validated] = checkit.validateSync(body)
+// The default language for all validations, defaults to &#x22;en&#x22; which
+// is included with the library by default. To add additional languages,
+// add them to the `Checkit.i18n` object.
+Checkit.language = &#x27;en&#x27;;
 
-// ...
-
-```
-
-### Checkit.<span class="apidocCodeKeywordSpan">check</span>(key, value, rules)
-
-```js
-Checkit.check(&#x27;email&#x27;, email, [&#x27;required&#x27;, &#x27;validEmail&#x27;])
-  .catch(function(err) {
-    console.log(err.message)
-  });
-```
+// Runs validation on an individual rule &#x26; value, for convenience.
+// e.g. `Checkit.<span class="apidocCodeKeywordSpan">check</span>(&#x27;email&#x27;, &#x27;foo@domain&#x27;, &#x27;email&#x27;).
+then(...`
+Checkit.check = function(key, value, rules, sync) {
+var input = {}, validations = {};
+input[key] = value;
+validations[key] = rules;
+if (sync) {
+  return checkSync(validations, input, key)
+} else {
 ...</pre></li>
     </ul>
 
@@ -1462,57 +1471,22 @@ if (err) {
   return label;
 }</pre></li>
     <li>example usage<pre class="apidocCodePre">...
-- [first](http://underscorejs.org/#first)
-- [initial](http://underscorejs.org/#initial)
-- [rest](http://underscorejs.org/#rest)
-- [last](http://underscorejs.org/#last)
+  } catch (err) {
+    return [err, null]
+  }
+}
 
-## Other Helpers
-
-### Checkit.<span class="apidocCodeKeywordSpan">labelTransform</span>(fn)
-
-The `Checkit.labelTransform` method takes a function that receives the field name and returns a human-readable label for use in
-error messages.
-
-
-## Change Log
-
-### 0.7.0
-...</pre></li>
-    </ul>
-
-
-
-    <h2>
-        <a href="#apidoc.element.checkit.toString" id="apidoc.element.checkit.toString">
-        function <span class="apidocSignatureSpan">checkit.</span>toString
-        <span class="apidocSignatureSpan">()</span>
-        </a>
-    </h2>
-    <ul>
-    <li>description and source-code<pre class="apidocCodePre">toString = function () {
-    return text;
-}</pre></li>
-    <li>example usage<pre class="apidocCodePre">...
-
-The &#x22;errors&#x22; property of a `Checkit.Error` object is a hash of errors for each of the fields which are considered &#x22
-;invalid&#x22; in any way by the validation rules. The keys in this hash are the invalid fields, and the values are [Checkit.FieldError
-](#checkitfielderror) objects, which in-turn have an `errors` attribute, an array containing errors for each failed rule.
-
-#### .get(key)
-
-The `get` method returns the `Checkit.FieldError` object for a specific key, or `undefined` if one does not exist.
-
-#### .<span class="apidocCodeKeywordSpan">toString</span>([flat])
-
-Useful for debugging, the `toString` method converts the `Checkit` error into a human readable representation of the failed validation
-. If the `flat` argument is passed as a &#x22;truthy&#x22; value, it will output only the first `ValidationError` in the `FieldError
-`; otherwise it will output each validation message in a comma separated string.
-
-#### .toJSON()
-
-Converts the current error object to a json representation of the error, for easy use/refinement elsewhere. For other methods, such
- as map, reduce, each, see the [utility methods](#utility-methods) section.
+Checkit.prototype.getMessage = function(item, key) {
+  var language = this.language;
+  var label    = item.label   || this.labels[key] || language.labels[key] || this.<span class="apidocCodeKeywordSpan">labelTransform
+</span>(key);
+  var message  = item.message || this.messages[item.rule] || language.messages[item.rule] || language.messages.fallback;
+  message = message.replace(labelRegex, label);
+  for (var i = 0, l = item.params.length; i &#x3c; l; i++) {
+    message = message.replace(varRegex(i+1), item.params[i]);
+  }
+  return message;
+}
 ...</pre></li>
     </ul>
 
@@ -1607,7 +1581,24 @@ return Promise.all(pendingConditionals)
     <li>description and source-code<pre class="apidocCodePre">filter = function () {
   return _[method].apply(_, [this.errors].concat(_.toArray(arguments)));
 }</pre></li>
-    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+  }
+
+  function notBlank(line) {
+    return line != null;
+  }
+  msg = diff.createPatch(&#x27;string&#x27;, err.actual, err.expected);
+  var lines = msg.split(&#x27;\n&#x27;).splice(4);
+  return &#x27;\n      &#x27; + colorLines(&#x27;diff added&#x27;, &#x27;+ expected&#x27;) + &#x27; &#x27; + colorLines(&#x27;diff
+ removed&#x27;, &#x27;- actual&#x27;) + &#x27;\n\n&#x27; + lines.map(cleanUp).<span class="apidocCodeKeywordSpan">filter</span>(notBlank).join(&#x27;\n&#x27;);
+}
+
+/**
+ * Return a character diff for `err`.
+ *
+ * @param {Error} err
+ * @return {String}
+...</pre></li>
     </ul>
 
 
@@ -1637,7 +1628,23 @@ return Promise.all(pendingConditionals)
     <li>description and source-code<pre class="apidocCodePre">forEach = function () {
   return _[method].apply(_, [this.errors].concat(_.toArray(arguments)));
 }</pre></li>
-    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+ * @api private
+ */
+
+Mocha.prototype.loadFiles = function(fn) {
+  var self = this;
+  var suite = this.suite;
+  var pending = this.files.length;
+  this.files.<span class="apidocCodeKeywordSpan">forEach</span>(function(file) {
+    file = path.resolve(file);
+    suite.emit(&#x27;pre-require&#x27;, global, file, self);
+    suite.emit(&#x27;require&#x27;, require(file), file, self);
+    suite.emit(&#x27;post-require&#x27;, global, file, self);
+    --pending || (fn &#x26;&#x26; fn());
+  });
+};
+...</pre></li>
     </ul>
 
 
@@ -1653,25 +1660,21 @@ return Promise.all(pendingConditionals)
   return this.errors[name];
 }</pre></li>
     <li>example usage<pre class="apidocCodePre">...
-
-The main Error object, `Checkit.Error` is returned from the has several helper methods &#x26; properties, as well as a number of
- utility methods:
-
-#### .errors
-
-The &#x22;errors&#x22; property of a `Checkit.Error` object is a hash of errors for each of the fields which are considered &#x22
-;invalid&#x22; in any way by the validation rules. The keys in this hash are the invalid fields, and the values are [Checkit.FieldError
-](#checkitfielderror) objects, which in-turn have an `errors` attribute, an array containing errors for each failed rule.
-
-#### .<span class="apidocCodeKeywordSpan">get</span>(key)
-
-The `get` method returns the `Checkit.FieldError` object for a specific key, or `undefined` if one does not exist.
-
-#### .toString([flat])
-
-Useful for debugging, the `toString` method converts the `Checkit` error into a human readable representation of the failed validation
-. If the `flat` argument is passed as a &#x22;truthy&#x22; value, it will output only the first `ValidationError` in the `FieldError
-`; otherwise it will output each validation message in a comma separated string.
+  var input = {}, validations = {};
+  input[key] = value;
+  validations[key] = rules;
+  if (sync) {
+    return checkSync(validations, input, key)
+  } else {
+    return new Checkit(validations).run(input).then(null, function(err) {
+      if (err instanceof CheckitError) throw err.<span class="apidocCodeKeywordSpan">get</span>(key);
+      throw err
+    })
+  }
+}
+Checkit.checkSync = function(key, value, rules) {
+  return Checkit.check(key, value, rules, true)
+}
 ...</pre></li>
     </ul>
 
@@ -1687,7 +1690,23 @@ Useful for debugging, the `toString` method converts the `Checkit` error into a 
     <li>description and source-code<pre class="apidocCodePre">invert = function () {
   return _[method].apply(_, [this.errors].concat(_.toArray(arguments)));
 }</pre></li>
-    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+
+  mocha.run = function(fn) {
+var options = mocha.options;
+mocha.globals(&#x27;location&#x27;);
+
+var query = Mocha.utils.parseQuery(global.location.search || &#x27;&#x27;);
+if (query.grep) mocha.grep(query.grep);
+if (query.invert) mocha.<span class="apidocCodeKeywordSpan">invert</span>();
+
+return Mocha.prototype.run.call(mocha, function() {
+  // The DOM Document is not available in Web Workers.
+  if (global.document) {
+    Mocha.utils.highlightTags(&#x27;code&#x27;);
+  }
+  if (fn) fn();
+...</pre></li>
     </ul>
 
 
@@ -1735,22 +1754,21 @@ toJSON: function(flat) {
   return _[method].apply(_, [this.errors].concat(_.toArray(arguments)));
 }</pre></li>
     <li>example usage<pre class="apidocCodePre">...
-
-```js
-var mainRules = Checkit(rules);
-
-mainRules
-  .run(obj)
-  .then(function(validatedFields) {
-    console.log(&#x27;The fields: &#x27; + _.<span class="apidocCodeKeywordSpan">keys</span>(validatedFields).join(&#x27;, &#x27
-;) + &#x27; were validated!&#x27;);
-  })
-  .caught(Checkit.Error, function(err) {
-    $(&#x22;#errors&#x22;).html(err.map(function(val, key) {
-      return &#x27;&#x3c;li&#x3e;&#x27; + key + &#x27;: &#x27; + val.first().message + &#x27;&#x3c;/li&#x3e;&#x27;;
-    }).join(&#x27;&#x27;));
-  });
-```
+          pending.push(processItemAsync(runner, validation, key, context).catch(addError(errors, key, validation)))
+        })
+      })
+      return Promise.all(pending)
+    })
+    .then(function() {
+      if (!_.isEmpty(errors)) {
+        var err = new CheckitError(_.<span class="apidocCodeKeywordSpan">keys</span>(errors).length + &#x27; invalid values&#x27
+;);
+            err.errors = errors;
+        throw err;
+      }
+      return _.pick(target, _.keys(validationHash));
+    });
+};
 ...</pre></li>
     </ul>
 
@@ -1767,20 +1785,21 @@ mainRules
   return _[method].apply(_, [this.errors].concat(_.toArray(arguments)));
 }</pre></li>
     <li>example usage<pre class="apidocCodePre">...
+var runner  = this;
+var target  = this.target
+var context = this.context
 
-mainRules
-  .run(obj)
-  .then(function(validatedFields) {
-    console.log(&#x27;The fields: &#x27; + _.keys(validatedFields).join(&#x27;, &#x27;) + &#x27; were validated!&#x27;);
-  })
-  .caught(Checkit.Error, function(err) {
-    $(&#x22;#errors&#x22;).html(err.<span class="apidocCodeKeywordSpan">map</span>(function(val, key) {
-      return &#x27;&#x3c;li&#x3e;&#x27; + key + &#x27;: &#x27; + val.first().message + &#x27;&#x3c;/li&#x3e;&#x27;;
-    }).join(&#x27;&#x27;));
-  });
-```
+var validationHash = _.clone(this.checkit.validations);
+var errors         = {}
 
-#### Node.js
+var pendingConditionals = _.<span class="apidocCodeKeywordSpan">map</span>(this.conditional, function(conditional) {
+  return Promise.resolve(checkConditional(runner, conditional))
+    .then(function(result) {
+      if (result !== true) return;
+      addVerifiedConditional(validationHash, conditional)
+    })
+    .catch(function() {})
+})
 ...</pre></li>
     </ul>
 
@@ -1842,7 +1861,25 @@ _.each(conditional[0], function(val, key) {
     <li>description and source-code<pre class="apidocCodePre">reduce = function () {
   return _[method].apply(_, [this.errors].concat(_.toArray(arguments)));
 }</pre></li>
-    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+            &#x3c;/div&#x3e;
+            &#x3c;p&#x3e;Creates a JSON object of the validations, if &#x3c;code&#x3e;true&#x3c;/code&#x3e; is passed - it will
+flatten the error into a single value per item.&#x3c;/p&#x3e;
+
+          &#x3c;/div&#x3e;
+
+          &#x3c;div class=&#x22;content&#x22;&#x3e;&#x3c;div class=&#x27;highlight&#x27;&#x3e;&#x3c;pre&#x3e;    toJSON: &#x3c;span
+ class=&#x22;keyword&#x22;&#x3e;function&#x3c;/span&#x3e;(flat) {
+    &#x3c;span class=&#x22;keyword&#x22;&#x3e;return&#x3c;/span&#x3e; &#x3c;span class=&#x22;keyword&#x22;&#x3e;this&#x3c;/span&#
+x3e;.<span class="apidocCodeKeywordSpan">reduce</span>(&#x3c;span class=&#x22;keyword&#x22;&#x3e;function&#x3c;/span&#x3e;(memo,
+val, key) {
+      memo[key] = val.toJSON();
+      &#x3c;span class=&#x22;keyword&#x22;&#x3e;return&#x3c;/span&#x3e; memo;
+    }, {});
+  }
+
+});&#x3c;/pre&#x3e;&#x3c;/div&#x3e;&#x3c;/div&#x3e;
+...</pre></li>
     </ul>
 
 
@@ -1872,7 +1909,23 @@ _.each(conditional[0], function(val, key) {
     <li>description and source-code<pre class="apidocCodePre">reject = function () {
   return _[method].apply(_, [this.errors].concat(_.toArray(arguments)));
 }</pre></li>
-    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+checkit.maybe({email: [&#x27;contains:tim&#x27;]}, function(item) {
+  return item.first_name === &#x27;tim&#x27;;
+});
+
+it(&#x27;validates for items that pass the conditional&#x27;, function() {
+  return checkit.run({email: &#x27;joe@gmail.com&#x27;, first_name: &#x27;tim&#x27;})
+    .then(function() {
+      return Promise.<span class="apidocCodeKeywordSpan">reject</span>(new Error(&#x27;Should not pass&#x27;));
+    }).catch(function(err) {
+      equal(err.toString(), &#x27;Checkit Errors - email: The email must contain tim&#x27;);
+    })
+    .then(function() {
+      return checkit.run({email: &#x27;tim@gmail&#x27;, first_name: &#x27;tim&#x27;});
+    })
+    .then(function() {
+...</pre></li>
     </ul>
 
 
@@ -1902,7 +1955,23 @@ _.each(conditional[0], function(val, key) {
     <li>description and source-code<pre class="apidocCodePre">size = function () {
   return _[method].apply(_, [this.errors].concat(_.toArray(arguments)));
 }</pre></li>
-    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+
+/**
+ * Initialize a new `Progress` indicator.
+ */
+
+function Progress() {
+  this.percent = 0;
+  this.<span class="apidocCodeKeywordSpan">size</span>(0);
+  this.fontSize(11);
+  this.font(&#x27;helvetica, arial, sans-serif&#x27;);
+}
+
+/**
+ * Set progress size to `n`.
+ *
+...</pre></li>
     </ul>
 
 
@@ -1955,21 +2024,21 @@ _.each(shareMethods.concat(arrMethods), function(method) {
   }, {});
 }</pre></li>
     <li>example usage<pre class="apidocCodePre">...
-  lastName: &#x27;Griesser&#x27;,
-  githubUsername: &#x27;tgriesser&#x27;
-};
+      _.map(errors, &#x27;message&#x27;).join(&#x27;, &#x27;);
+  },
 
-checkit.run(body).then(function(validated) {
-  console.log(validated);
-}).catch(Checkit.Error, function(err) {
-  console.log(err.<span class="apidocCodeKeywordSpan">toJSON</span>());
-})
-```
+  // Returns the current error in json format, by calling `toJSON`
+  // on the error, if there is one, otherwise returning the message.
+  toJSON: function() {
+    return this.map(function(err) {
+      if (err.toJSON) return err.<span class="apidocCodeKeywordSpan">toJSON</span>();
+      return err.message;
+    });
+  }
 
-### checkit.runSync
-### checkit.validateSync (alias)
+});
 
-```js
+// An object that inherits from the `Error` prototype,
 ...</pre></li>
     </ul>
 
@@ -2137,7 +2206,24 @@ return Promise.all(pendingConditionals)
     <li>description and source-code<pre class="apidocCodePre">filter = function () {
   return _[method].apply(_, [this.errors].concat(_.toArray(arguments)));
 }</pre></li>
-    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+  }
+
+  function notBlank(line) {
+    return line != null;
+  }
+  msg = diff.createPatch(&#x27;string&#x27;, err.actual, err.expected);
+  var lines = msg.split(&#x27;\n&#x27;).splice(4);
+  return &#x27;\n      &#x27; + colorLines(&#x27;diff added&#x27;, &#x27;+ expected&#x27;) + &#x27; &#x27; + colorLines(&#x27;diff
+ removed&#x27;, &#x27;- actual&#x27;) + &#x27;\n\n&#x27; + lines.map(cleanUp).<span class="apidocCodeKeywordSpan">filter</span>(notBlank).join(&#x27;\n&#x27;);
+}
+
+/**
+ * Return a character diff for `err`.
+ *
+ * @param {Error} err
+ * @return {String}
+...</pre></li>
     </ul>
 
 
@@ -2167,7 +2253,23 @@ return Promise.all(pendingConditionals)
     <li>description and source-code<pre class="apidocCodePre">forEach = function () {
   return _[method].apply(_, [this.errors].concat(_.toArray(arguments)));
 }</pre></li>
-    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+ * @api private
+ */
+
+Mocha.prototype.loadFiles = function(fn) {
+  var self = this;
+  var suite = this.suite;
+  var pending = this.files.length;
+  this.files.<span class="apidocCodeKeywordSpan">forEach</span>(function(file) {
+    file = path.resolve(file);
+    suite.emit(&#x27;pre-require&#x27;, global, file, self);
+    suite.emit(&#x27;require&#x27;, require(file), file, self);
+    suite.emit(&#x27;post-require&#x27;, global, file, self);
+    --pending || (fn &#x26;&#x26; fn());
+  });
+};
+...</pre></li>
     </ul>
 
 
@@ -2260,20 +2362,21 @@ toJSON: function(flat) {
   return _[method].apply(_, [this.errors].concat(_.toArray(arguments)));
 }</pre></li>
     <li>example usage<pre class="apidocCodePre">...
+var runner  = this;
+var target  = this.target
+var context = this.context
 
-mainRules
-  .run(obj)
-  .then(function(validatedFields) {
-    console.log(&#x27;The fields: &#x27; + _.keys(validatedFields).join(&#x27;, &#x27;) + &#x27; were validated!&#x27;);
-  })
-  .caught(Checkit.Error, function(err) {
-    $(&#x22;#errors&#x22;).html(err.<span class="apidocCodeKeywordSpan">map</span>(function(val, key) {
-      return &#x27;&#x3c;li&#x3e;&#x27; + key + &#x27;: &#x27; + val.first().message + &#x27;&#x3c;/li&#x3e;&#x27;;
-    }).join(&#x27;&#x27;));
-  });
-```
+var validationHash = _.clone(this.checkit.validations);
+var errors         = {}
 
-#### Node.js
+var pendingConditionals = _.<span class="apidocCodeKeywordSpan">map</span>(this.conditional, function(conditional) {
+  return Promise.resolve(checkConditional(runner, conditional))
+    .then(function(result) {
+      if (result !== true) return;
+      addVerifiedConditional(validationHash, conditional)
+    })
+    .catch(function() {})
+})
 ...</pre></li>
     </ul>
 
@@ -2289,7 +2392,25 @@ mainRules
     <li>description and source-code<pre class="apidocCodePre">reduce = function () {
   return _[method].apply(_, [this.errors].concat(_.toArray(arguments)));
 }</pre></li>
-    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+            &#x3c;/div&#x3e;
+            &#x3c;p&#x3e;Creates a JSON object of the validations, if &#x3c;code&#x3e;true&#x3c;/code&#x3e; is passed - it will
+flatten the error into a single value per item.&#x3c;/p&#x3e;
+
+          &#x3c;/div&#x3e;
+
+          &#x3c;div class=&#x22;content&#x22;&#x3e;&#x3c;div class=&#x27;highlight&#x27;&#x3e;&#x3c;pre&#x3e;    toJSON: &#x3c;span
+ class=&#x22;keyword&#x22;&#x3e;function&#x3c;/span&#x3e;(flat) {
+    &#x3c;span class=&#x22;keyword&#x22;&#x3e;return&#x3c;/span&#x3e; &#x3c;span class=&#x22;keyword&#x22;&#x3e;this&#x3c;/span&#
+x3e;.<span class="apidocCodeKeywordSpan">reduce</span>(&#x3c;span class=&#x22;keyword&#x22;&#x3e;function&#x3c;/span&#x3e;(memo,
+val, key) {
+      memo[key] = val.toJSON();
+      &#x3c;span class=&#x22;keyword&#x22;&#x3e;return&#x3c;/span&#x3e; memo;
+    }, {});
+  }
+
+});&#x3c;/pre&#x3e;&#x3c;/div&#x3e;&#x3c;/div&#x3e;
+...</pre></li>
     </ul>
 
 
@@ -2319,7 +2440,23 @@ mainRules
     <li>description and source-code<pre class="apidocCodePre">reject = function () {
   return _[method].apply(_, [this.errors].concat(_.toArray(arguments)));
 }</pre></li>
-    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+checkit.maybe({email: [&#x27;contains:tim&#x27;]}, function(item) {
+  return item.first_name === &#x27;tim&#x27;;
+});
+
+it(&#x27;validates for items that pass the conditional&#x27;, function() {
+  return checkit.run({email: &#x27;joe@gmail.com&#x27;, first_name: &#x27;tim&#x27;})
+    .then(function() {
+      return Promise.<span class="apidocCodeKeywordSpan">reject</span>(new Error(&#x27;Should not pass&#x27;));
+    }).catch(function(err) {
+      equal(err.toString(), &#x27;Checkit Errors - email: The email must contain tim&#x27;);
+    })
+    .then(function() {
+      return checkit.run({email: &#x27;tim@gmail&#x27;, first_name: &#x27;tim&#x27;});
+    })
+    .then(function() {
+...</pre></li>
     </ul>
 
 
@@ -2349,7 +2486,23 @@ mainRules
     <li>description and source-code<pre class="apidocCodePre">size = function () {
   return _[method].apply(_, [this.errors].concat(_.toArray(arguments)));
 }</pre></li>
-    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+
+/**
+ * Initialize a new `Progress` indicator.
+ */
+
+function Progress() {
+  this.percent = 0;
+  this.<span class="apidocCodeKeywordSpan">size</span>(0);
+  this.fontSize(11);
+  this.font(&#x27;helvetica, arial, sans-serif&#x27;);
+}
+
+/**
+ * Set progress size to `n`.
+ *
+...</pre></li>
     </ul>
 
 
@@ -2432,21 +2585,21 @@ _.each(shareMethods.concat(arrMethods), function(method) {
   });
 }</pre></li>
     <li>example usage<pre class="apidocCodePre">...
-  lastName: &#x27;Griesser&#x27;,
-  githubUsername: &#x27;tgriesser&#x27;
-};
+      _.map(errors, &#x27;message&#x27;).join(&#x27;, &#x27;);
+  },
 
-checkit.run(body).then(function(validated) {
-  console.log(validated);
-}).catch(Checkit.Error, function(err) {
-  console.log(err.<span class="apidocCodeKeywordSpan">toJSON</span>());
-})
-```
+  // Returns the current error in json format, by calling `toJSON`
+  // on the error, if there is one, otherwise returning the message.
+  toJSON: function() {
+    return this.map(function(err) {
+      if (err.toJSON) return err.<span class="apidocCodeKeywordSpan">toJSON</span>();
+      return err.message;
+    });
+  }
 
-### checkit.runSync
-### checkit.validateSync (alias)
+});
 
-```js
+// An object that inherits from the `Error` prototype,
 ...</pre></li>
     </ul>
 
@@ -2539,7 +2692,24 @@ Converts the current error object to a json representation of the error, for eas
   this.context        = _.clone(context || {})
   this.validator      = new Validator(this.target, checkit.language)
 }</pre></li>
-    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+            &#x3c;p&#x3e;Asynchronously runs a validation block, returning a promise
+which resolves with the validated object items, or is rejected
+with a &#x3c;code&#x3e;Checkit.Error&#x3c;/code&#x3e; instance.&#x3c;/p&#x3e;
+
+          &#x3c;/div&#x3e;
+
+          &#x3c;div class=&#x22;content&#x22;&#x3e;&#x3c;div class=&#x27;highlight&#x27;&#x3e;&#x3c;pre&#x3e;    run: &#x3c;span
+ class=&#x22;keyword&#x22;&#x3e;function&#x3c;/span&#x3e;(target) {
+    &#x3c;span class=&#x22;keyword&#x22;&#x3e;return&#x3c;/span&#x3e; &#x3c;span class=&#x22;keyword&#x22;&#x3e;new&#x3c;/span&#
+x3e; Checkit.<span class="apidocCodeKeywordSpan">Runner</span>(&#x3c;span class=&#x22;keyword&#x22;&#x3e;this&#x3c;/span&#x3e;).
+run(target);
+  }
+
+};&#x3c;/pre&#x3e;&#x3c;/div&#x3e;&#x3c;/div&#x3e;
+
+      &#x3c;/li&#x3e;
+...</pre></li>
     </ul>
 
 
@@ -2593,24 +2763,21 @@ Converts the current error object to a json representation of the error, for eas
     });
 }</pre></li>
     <li>example usage<pre class="apidocCodePre">...
+}
 
-It allows you to seamlessly validate full javascript objects, defining custom messages, labels, and validations, with full support
- for asynchronous validations with promises. It supports [conditional validations](#conditional-validations), and has powerful,
-consistent [error structuring](#checkit-errors) and [utility methods](#error-utility-methods) for manipulating your errors&#x27;
-output any way you can imagine.
+// Asynchronously runs a validation block, returning a promise
+// which resolves with the validated object items, or is rejected
+// with a `Checkit.Error`
+Checkit.prototype.run =
+Checkit.prototype.validate = function(target, context) {
+return new Runner(this, target, context).<span class="apidocCodeKeywordSpan">run</span>();
+}
 
-```js
-var mainRules = Checkit(rules);
-
-mainRules
-.<span class="apidocCodeKeywordSpan">run</span>(obj)
-.then(function(validatedFields) {
-  console.log(&#x27;The fields: &#x27; + _.keys(validatedFields).join(&#x27;, &#x27;) + &#x27; were validated!&#x27;);
-})
-.caught(Checkit.Error, function(err) {
-  $(&#x22;#errors&#x22;).html(err.map(function(val, key) {
-    return &#x27;&#x3c;li&#x3e;&#x27; + key + &#x27;: &#x27; + val.first().message + &#x27;&#x3c;/li&#x3e;&#x27;;
-  }).join(&#x27;&#x27;));
+// Synchronously runs a validation block, returning an object of all fields
+// validated, or throwing a `Checkit.Error` object.
+Checkit.prototype.runSync =
+Checkit.prototype.validateSync = function(target, context) {
+try  {
 ...</pre></li>
     </ul>
 
@@ -2700,24 +2867,21 @@ mainRules
   return _.pick(target, _.keys(validationHash));
 }</pre></li>
     <li>example usage<pre class="apidocCodePre">...
+}
 
-It allows you to seamlessly validate full javascript objects, defining custom messages, labels, and validations, with full support
- for asynchronous validations with promises. It supports [conditional validations](#conditional-validations), and has powerful,
-consistent [error structuring](#checkit-errors) and [utility methods](#error-utility-methods) for manipulating your errors&#x27;
-output any way you can imagine.
+// Asynchronously runs a validation block, returning a promise
+// which resolves with the validated object items, or is rejected
+// with a `Checkit.Error`
+Checkit.prototype.run =
+Checkit.prototype.validate = function(target, context) {
+return new Runner(this, target, context).<span class="apidocCodeKeywordSpan">run</span>();
+}
 
-```js
-var mainRules = Checkit(rules);
-
-mainRules
-.<span class="apidocCodeKeywordSpan">run</span>(obj)
-.then(function(validatedFields) {
-  console.log(&#x27;The fields: &#x27; + _.keys(validatedFields).join(&#x27;, &#x27;) + &#x27; were validated!&#x27;);
-})
-.caught(Checkit.Error, function(err) {
-  $(&#x22;#errors&#x22;).html(err.map(function(val, key) {
-    return &#x27;&#x3c;li&#x3e;&#x27; + key + &#x27;: &#x27; + val.first().message + &#x27;&#x3c;/li&#x3e;&#x27;;
-  }).join(&#x27;&#x27;));
+// Synchronously runs a validation block, returning an object of all fields
+// validated, or throwing a `Checkit.Error` object.
+Checkit.prototype.runSync =
+Checkit.prototype.validateSync = function(target, context) {
+try  {
 ...</pre></li>
     </ul>
 
@@ -2853,7 +3017,25 @@ Converts the current error object to a json representation of the error, for eas
   if (_.isObject(val)) return _.has(val, item);
   return false;
 }</pre></li>
-    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+            &#x3c;a class=&#x22;pilcrow&#x22; href=&#x22;#section-23&#x22;&#x3e;&#x26;#182;&#x3c;/a&#x3e;
+          &#x3c;/div&#x3e;
+          &#x3c;p&#x3e;Check if the value is an &#x26;quot;accepted&#x26;quot; value, useful for form submissions.&#x3c;/p&#x3e;
+
+        &#x3c;/div&#x3e;
+
+        &#x3c;div class=&#x22;content&#x22;&#x3e;&#x3c;div class=&#x27;highlight&#x27;&#x3e;&#x3c;pre&#x3e;    accepted: &#x3c;span
+ class=&#x22;keyword&#x22;&#x3e;function&#x3c;/span&#x3e;(val) {
+  &#x3c;span class=&#x22;keyword&#x22;&#x3e;return&#x3c;/span&#x3e; _.<span class="apidocCodeKeywordSpan">contains</span>(&#x3c;
+span class=&#x22;keyword&#x22;&#x3e;this&#x3c;/span&#x3e;._language.accepted, val);
+},&#x3c;/pre&#x3e;&#x3c;/div&#x3e;&#x3c;/div&#x3e;
+
+    &#x3c;/li&#x3e;
+
+
+    &#x3c;li id=&#x22;section-24&#x22;&#x3e;
+        &#x3c;div class=&#x22;annotation&#x22;&#x3e;
+...</pre></li>
     </ul>
 
 
@@ -3308,7 +3490,24 @@ accepted: function(val) {
   var func = isArray(collection) ? arrayFilter : baseFilter;
   return func(collection, baseIteratee(predicate, 3));
 }</pre></li>
-    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+  }
+
+  function notBlank(line) {
+    return line != null;
+  }
+  msg = diff.createPatch(&#x27;string&#x27;, err.actual, err.expected);
+  var lines = msg.split(&#x27;\n&#x27;).splice(4);
+  return &#x27;\n      &#x27; + colorLines(&#x27;diff added&#x27;, &#x27;+ expected&#x27;) + &#x27; &#x27; + colorLines(&#x27;diff
+ removed&#x27;, &#x27;- actual&#x27;) + &#x27;\n\n&#x27; + lines.map(cleanUp).<span class="apidocCodeKeywordSpan">filter</span>(notBlank).join(&#x27;\n&#x27;);
+}
+
+/**
+ * Return a character diff for `err`.
+ *
+ * @param {Error} err
+ * @return {String}
+...</pre></li>
     </ul>
 
 
@@ -3346,7 +3545,23 @@ accepted: function(val) {
   var func = isArray(collection) ? arrayEach : baseEach;
   return func(collection, castFunction(iteratee));
 }</pre></li>
-    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+ * @api private
+ */
+
+Mocha.prototype.loadFiles = function(fn) {
+  var self = this;
+  var suite = this.suite;
+  var pending = this.files.length;
+  this.files.<span class="apidocCodeKeywordSpan">forEach</span>(function(file) {
+    file = path.resolve(file);
+    suite.emit(&#x27;pre-require&#x27;, global, file, self);
+    suite.emit(&#x27;require&#x27;, require(file), file, self);
+    suite.emit(&#x27;post-require&#x27;, global, file, self);
+    --pending || (fn &#x26;&#x26; fn());
+  });
+};
+...</pre></li>
     </ul>
 
 
@@ -3502,7 +3717,23 @@ contains: function(val, item) {
     <li>description and source-code<pre class="apidocCodePre">invert = function (object, iteratee) {
   return baseInverter(object, setter, toIteratee(iteratee), {});
 }</pre></li>
-    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+
+  mocha.run = function(fn) {
+var options = mocha.options;
+mocha.globals(&#x27;location&#x27;);
+
+var query = Mocha.utils.parseQuery(global.location.search || &#x27;&#x27;);
+if (query.grep) mocha.grep(query.grep);
+if (query.invert) mocha.<span class="apidocCodeKeywordSpan">invert</span>();
+
+return Mocha.prototype.run.call(mocha, function() {
+  // The DOM Document is not available in Web Workers.
+  if (global.document) {
+    Mocha.utils.highlightTags(&#x27;code&#x27;);
+  }
+  if (fn) fn();
+...</pre></li>
     </ul>
 
 
@@ -3889,22 +4120,21 @@ contains: function(val, item) {
   return isArrayLike(object) ? arrayLikeKeys(object) : baseKeys(object);
 }</pre></li>
     <li>example usage<pre class="apidocCodePre">...
-
-```js
-var mainRules = Checkit(rules);
-
-mainRules
-  .run(obj)
-  .then(function(validatedFields) {
-    console.log(&#x27;The fields: &#x27; + _.<span class="apidocCodeKeywordSpan">keys</span>(validatedFields).join(&#x27;, &#x27
-;) + &#x27; were validated!&#x27;);
-  })
-  .caught(Checkit.Error, function(err) {
-    $(&#x22;#errors&#x22;).html(err.map(function(val, key) {
-      return &#x27;&#x3c;li&#x3e;&#x27; + key + &#x27;: &#x27; + val.first().message + &#x27;&#x3c;/li&#x3e;&#x27;;
-    }).join(&#x27;&#x27;));
-  });
-```
+          pending.push(processItemAsync(runner, validation, key, context).catch(addError(errors, key, validation)))
+        })
+      })
+      return Promise.all(pending)
+    })
+    .then(function() {
+      if (!_.isEmpty(errors)) {
+        var err = new CheckitError(_.<span class="apidocCodeKeywordSpan">keys</span>(errors).length + &#x27; invalid values&#x27
+;);
+            err.errors = errors;
+        throw err;
+      }
+      return _.pick(target, _.keys(validationHash));
+    });
+};
 ...</pre></li>
     </ul>
 
@@ -3938,20 +4168,21 @@ mainRules
   return func(collection, baseIteratee(iteratee, 3));
 }</pre></li>
     <li>example usage<pre class="apidocCodePre">...
+var runner  = this;
+var target  = this.target
+var context = this.context
 
-mainRules
-  .run(obj)
-  .then(function(validatedFields) {
-    console.log(&#x27;The fields: &#x27; + _.keys(validatedFields).join(&#x27;, &#x27;) + &#x27; were validated!&#x27;);
-  })
-  .caught(Checkit.Error, function(err) {
-    $(&#x22;#errors&#x22;).html(err.<span class="apidocCodeKeywordSpan">map</span>(function(val, key) {
-      return &#x27;&#x3c;li&#x3e;&#x27; + key + &#x27;: &#x27; + val.first().message + &#x27;&#x3c;/li&#x3e;&#x27;;
-    }).join(&#x27;&#x27;));
-  });
-```
+var validationHash = _.clone(this.checkit.validations);
+var errors         = {}
 
-#### Node.js
+var pendingConditionals = _.<span class="apidocCodeKeywordSpan">map</span>(this.conditional, function(conditional) {
+  return Promise.resolve(checkConditional(runner, conditional))
+    .then(function(result) {
+      if (result !== true) return;
+      addVerifiedConditional(validationHash, conditional)
+    })
+    .catch(function() {})
+})
 ...</pre></li>
     </ul>
 
@@ -4034,7 +4265,25 @@ _.each(conditional[0], function(val, key) {
 
   return func(collection, baseIteratee(iteratee, 4), accumulator, initAccum, baseEach);
 }</pre></li>
-    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+            &#x3c;/div&#x3e;
+            &#x3c;p&#x3e;Creates a JSON object of the validations, if &#x3c;code&#x3e;true&#x3c;/code&#x3e; is passed - it will
+flatten the error into a single value per item.&#x3c;/p&#x3e;
+
+          &#x3c;/div&#x3e;
+
+          &#x3c;div class=&#x22;content&#x22;&#x3e;&#x3c;div class=&#x27;highlight&#x27;&#x3e;&#x3c;pre&#x3e;    toJSON: &#x3c;span
+ class=&#x22;keyword&#x22;&#x3e;function&#x3c;/span&#x3e;(flat) {
+    &#x3c;span class=&#x22;keyword&#x22;&#x3e;return&#x3c;/span&#x3e; &#x3c;span class=&#x22;keyword&#x22;&#x3e;this&#x3c;/span&#
+x3e;.<span class="apidocCodeKeywordSpan">reduce</span>(&#x3c;span class=&#x22;keyword&#x22;&#x3e;function&#x3c;/span&#x3e;(memo,
+val, key) {
+      memo[key] = val.toJSON();
+      &#x3c;span class=&#x22;keyword&#x22;&#x3e;return&#x3c;/span&#x3e; memo;
+    }, {});
+  }
+
+});&#x3c;/pre&#x3e;&#x3c;/div&#x3e;&#x3c;/div&#x3e;
+...</pre></li>
     </ul>
 
 
@@ -4068,7 +4317,23 @@ _.each(conditional[0], function(val, key) {
   var func = isArray(collection) ? arrayFilter : baseFilter;
   return func(collection, negate(baseIteratee(predicate, 3)));
 }</pre></li>
-    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+checkit.maybe({email: [&#x27;contains:tim&#x27;]}, function(item) {
+  return item.first_name === &#x27;tim&#x27;;
+});
+
+it(&#x27;validates for items that pass the conditional&#x27;, function() {
+  return checkit.run({email: &#x27;joe@gmail.com&#x27;, first_name: &#x27;tim&#x27;})
+    .then(function() {
+      return Promise.<span class="apidocCodeKeywordSpan">reject</span>(new Error(&#x27;Should not pass&#x27;));
+    }).catch(function(err) {
+      equal(err.toString(), &#x27;Checkit Errors - email: The email must contain tim&#x27;);
+    })
+    .then(function() {
+      return checkit.run({email: &#x27;tim@gmail&#x27;, first_name: &#x27;tim&#x27;});
+    })
+    .then(function() {
+...</pre></li>
     </ul>
 
 
@@ -4109,7 +4374,23 @@ _.each(conditional[0], function(val, key) {
   }
   return baseKeys(collection).length;
 }</pre></li>
-    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+
+/**
+ * Initialize a new `Progress` indicator.
+ */
+
+function Progress() {
+  this.percent = 0;
+  this.<span class="apidocCodeKeywordSpan">size</span>(0);
+  this.fontSize(11);
+  this.font(&#x27;helvetica, arial, sans-serif&#x27;);
+}
+
+/**
+ * Set progress size to `n`.
+ *
+...</pre></li>
     </ul>
 
 
