@@ -1,6 +1,6 @@
 # npmdoc-checkit
 
-#### api documentation for  [checkit (v0.7.0)](https://github.com/tgriesser/checkit#readme)  [![npm package](https://img.shields.io/npm/v/npmdoc-checkit.svg?style=flat-square)](https://www.npmjs.org/package/npmdoc-checkit) [![travis-ci.org build-status](https://api.travis-ci.org/npmdoc/node-npmdoc-checkit.svg)](https://travis-ci.org/npmdoc/node-npmdoc-checkit)
+#### basic api documentation for  [checkit (v0.7.0)](https://github.com/tgriesser/checkit#readme)  [![npm package](https://img.shields.io/npm/v/npmdoc-checkit.svg?style=flat-square)](https://www.npmjs.org/package/npmdoc-checkit) [![travis-ci.org build-status](https://api.travis-ci.org/npmdoc/node-npmdoc-checkit.svg)](https://travis-ci.org/npmdoc/node-npmdoc-checkit)
 
 #### Simple validations for node and the browser.
 
@@ -73,7 +73,8 @@
         "prepublish": "npm test && npm run build",
         "test": "mocha -R spec test/index.js"
     },
-    "version": "0.7.0"
+    "version": "0.7.0",
+    "bin": {}
 }
 ```
 
